@@ -43,6 +43,7 @@ import org.apache.beam.sdk.coders.Coder;
 import org.apache.beam.sdk.io.BoundedSource;
 import org.apache.beam.sdk.io.gcp.bigquery.BigQueryServices.BigQueryServerStream;
 import org.apache.beam.sdk.io.gcp.bigquery.BigQueryServices.StorageClient;
+import org.apache.beam.sdk.io.range.OffsetRangeTracker;
 import org.apache.beam.sdk.metrics.Metrics;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.transforms.SerializableFunction;
@@ -153,6 +154,7 @@ public class BigQueryStorageStreamSource<T> extends BoundedSource<T> {
     private final SerializableFunction<SchemaAndRecord, T> parseFn;
     private final StorageClient storageClient;
     private final TableSchema tableSchema;
+    private final OffsetRangeTracker rangeTracker;
 
     private BigQueryStorageStreamSource<T> source;
     private BigQueryServerStream<ReadRowsResponse> responseStream;
@@ -184,6 +186,7 @@ public class BigQueryStorageStreamSource<T> extends BoundedSource<T> {
       this.progressAtResponseEnd = 0d;
       this.rowsConsumedFromCurrentResponse = 0L;
       this.totalRowsInCurrentResponse = 0L;
+      this.rangeTracker = new OffsetRangeTracker(0L, OffsetRangeTracker.OFFSET_INFINITY);
     }
 
     @Override
@@ -209,6 +212,7 @@ public class BigQueryStorageStreamSource<T> extends BoundedSource<T> {
     }
 
     private synchronized boolean readNextRecord() throws IOException {
+      if (!rangeTracker.tryReturnRecordAt(true, currentOffset)) return false;
       while (decoder == null || decoder.isEnd()) {
         if (!responseIterator.hasNext()) {
           fractionConsumed = 1d;
@@ -370,7 +374,7 @@ public class BigQueryStorageStreamSource<T> extends BoundedSource<T> {
 
     @Override
     public synchronized Double getFractionConsumed() {
-      return fractionConsumed;
+      return rangeTracker.getFractionConsumed();
     }
   }
 }
