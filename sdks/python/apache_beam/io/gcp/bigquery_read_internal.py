@@ -132,6 +132,12 @@ class _PassThroughThenCleanup(PTransform):
     return main_output
 
 
+class _DeleteTempDatasetsInProject(beam.transforms.DoFn):
+  def process(self, project):
+    # _LOGGER.warning('### Project in DoFn: %s', str(project))
+    bq = bigquery_tools.BigQueryWrapper()
+    bq.clean_up_temporary_dataset('vachan-test')
+
 class _BigQueryReadSplit(beam.transforms.DoFn):
   """Starts the process of reading from BigQuery.
 

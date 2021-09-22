@@ -199,7 +199,7 @@ class ReadUsingStorageApiTests(BigQueryReadIntegrationTests):
     cls._create_table(cls.table_name)
 
     table_id = '{}.{}'.format(cls.dataset_id, cls.table_name)
-    cls.query = 'SELECT number, str, rec FROM `%s`' % table_id
+    cls.query = 'SELECT * FROM `%s`' % table_id
 
     # Materializing the newly created Table to ensure the Read API can stream.
     cls.temp_table_reference = cls._execute_query(cls.project, cls.query)
@@ -280,6 +280,13 @@ class ReadUsingStorageApiTests(BigQueryReadIntegrationTests):
             'string': 'Struct String!!', 'bool': False
         },
     }]
+
+    # EXPECTED_TABLE_DATA = [
+    #   (1, 'abc', None),
+    #   (2, 'def', None),
+    #   (3, '你好', None),
+    #   (4, 'привет', {'string': 'Struct String!!', 'bool': False})
+    # ]
     with beam.Pipeline(argv=self.args) as p:
       result = (
           p | 'Read with BigQuery Storage API' >> beam.io.ReadFromBigQuery(
