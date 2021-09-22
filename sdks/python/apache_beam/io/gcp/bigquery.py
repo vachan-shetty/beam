@@ -1234,7 +1234,7 @@ class _ReadRowsResponseReaderWithFastAvro():
         self.bytes_reader = io.BytesIO(
             self.read_rows_response.avro_rows.serialized_binary_rows)
         return fastavro.schemaless_reader(self.bytes_reader, self.avro_schema)
-      else: 
+      else:
         raise StopIteration
 
 
